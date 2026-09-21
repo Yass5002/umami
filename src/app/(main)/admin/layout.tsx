@@ -11,7 +11,7 @@ export default function ({ children }) {
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Admin | Umami',
-    default: 'Admin | Umami',
+    template: '%s | admin | mehro analytics',
+    default: 'admin | mehro analytics',
   },
 };
