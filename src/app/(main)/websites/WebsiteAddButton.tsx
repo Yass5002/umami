@@ -20,11 +20,7 @@ export function WebsiteAddButton({ teamId, onSave }: { teamId: string; onSave?: 
     touch('websites');
     onSave?.();
 
-    if (cloudMode) {
-      setCreatedWebsite(website);
-    } else {
-      setIsOpen(false);
-    }
+    setCreatedWebsite(website);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -54,7 +50,7 @@ export function WebsiteAddButton({ teamId, onSave }: { teamId: string; onSave?: 
               teamId={teamId}
               onSave={handleSave}
               onClose={close}
-              closeOnSave={!cloudMode}
+              closeOnSave={false}
             />
           )
         }
