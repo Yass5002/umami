@@ -31,7 +31,19 @@ export async function request(
     },
     body,
   }).then(async res => {
-    const data = await res.json();
+    let data: any;
+    const text = await res.text();
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: { message: text, status: res.status } };
+      }
+    } else {
+      data = res.ok
+        ? {}
+        : { error: { message: res.statusText || 'Server error', status: res.status } };
+    }
 
     return {
       ok: res.ok,
