@@ -41,5 +41,12 @@ export async function GET(
     endDate,
   });
 
-  return json({ data: { ...data, comparison } });
+  const emptyStats = { events: 0, visitors: 0, visits: 0, uniqueEvents: 0 };
+
+  return json({
+    data: {
+      ...(data || emptyStats),
+      comparison: comparison || emptyStats,
+    },
+  });
 }

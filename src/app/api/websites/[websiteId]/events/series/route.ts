@@ -13,7 +13,7 @@ export async function GET(
     startAt: z.coerce.number().int(),
     endAt: z.coerce.number().int(),
     unit: unitParam.optional(),
-    timezone: timezoneParam,
+    timezone: timezoneParam.optional(),
     limit: z.coerce.number().optional(),
     ...filterParams,
   });

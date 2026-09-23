@@ -12,7 +12,7 @@ export async function GET(
   const schema = z.object({
     startAt: z.coerce.number().int(),
     endAt: z.coerce.number().int(),
-    timezone: timezoneParam,
+    timezone: timezoneParam.optional(),
     ...filterParams,
   });
 

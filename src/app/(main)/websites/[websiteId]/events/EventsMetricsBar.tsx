@@ -17,27 +17,27 @@ export function EventsMetricsBar({ websiteId }: { websiteId: string }) {
   const metrics = data
     ? [
         {
-          value: visitors,
+          value: visitors ?? 0,
           label: t(labels.visitors),
-          change: visitors - comparison.visitors,
+          change: (visitors ?? 0) - (comparison?.visitors ?? 0),
           formatValue: formatLongNumber,
         },
         {
-          value: visits,
+          value: visits ?? 0,
           label: t(labels.visits),
-          change: visits - comparison.visits,
+          change: (visits ?? 0) - (comparison?.visits ?? 0),
           formatValue: formatLongNumber,
         },
         {
-          value: events,
+          value: events ?? 0,
           label: t(labels.events),
-          change: events - comparison.events,
+          change: (events ?? 0) - (comparison?.events ?? 0),
           formatValue: formatLongNumber,
         },
         {
-          value: uniqueEvents,
+          value: uniqueEvents ?? 0,
           label: t(labels.uniqueEvents),
-          change: uniqueEvents - comparison.uniqueEvents,
+          change: (uniqueEvents ?? 0) - (comparison?.uniqueEvents ?? 0),
           formatValue: formatLongNumber,
         },
       ]

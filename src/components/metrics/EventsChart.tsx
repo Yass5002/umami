@@ -39,7 +39,7 @@ export function EventsChart({ websiteId, focusLabel, limit }: EventsChartProps) 
   }, []);
 
   const chartData: any = useMemo(() => {
-    if (!data) return;
+    if (!data || !Array.isArray(data)) return;
 
     const map = (data as any[]).reduce((obj, { x, t, y }) => {
       if (!obj[x]) {
