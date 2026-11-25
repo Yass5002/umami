@@ -105,14 +105,12 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Upload bundle to server
+      - name: Upload bundle and deploy script to server
         run: |
-          scp -i ~/.ssh/deploy_key deploy-bundle.tar.gz "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/mehro-analytics-deploy.tar.gz"
-
-      - name: Deploy and verify on server
-        run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" 'bash -s' << 'EOF'
+          cat << 'EOF' > deploy-remote.sh
+          #!/usr/bin/env bash
           set -euo pipefail
+          trap 'rm -f /tmp/deploy-remote.sh /tmp/mehro-analytics-deploy.tar.gz' EXIT
           export PATH="/usr/bin:$PATH"
 
           APP_DIR="/home/the-host/mehro-analytics"
@@ -141,7 +139,6 @@ jobs:
           rm -rf /tmp/mehro-bundle
           mkdir -p /tmp/mehro-bundle
           tar -xzf /tmp/mehro-analytics-deploy.tar.gz -C /tmp/mehro-bundle
-          rm -f /tmp/mehro-analytics-deploy.tar.gz
 
           rm -rf .next.old
           if [ -d .next ]; then mv .next .next.old; fi
@@ -157,22 +154,35 @@ jobs:
           cp -af /tmp/mehro-bundle/packages/mcp/dist/. packages/mcp/dist/
           rm -rf /tmp/mehro-bundle
 
-          # Reload PM2 process
-          pm2 startOrReload ecosystem.config.cjs --only mehro-analytics --update-env
+          # Restart PM2 process so new Next.js & Node binaries are loaded
+          pm2 restart mehro-analytics --update-env || pm2 start ecosystem.config.cjs --only mehro-analytics
           pm2 save
 
-          # Health check
-          for i in $(seq 1 15); do
-            if curl -sf http://127.0.0.1:3005/api/heartbeat >/dev/null; then
+          # Health check (API heartbeat, SSR login branding, and tracker script)
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:3005/api/heartbeat >/dev/null && curl -sf http://127.0.0.1:3005/login | grep -q "mehro analytics"; then
               echo "Health check passed"
               break
             fi
+            if [ "$i" -eq 20 ]; then
+              echo "Health check failed after 20 attempts"
+              pm2 logs mehro-analytics --lines 30 --nostream || true
+              exit 1
+            fi
             sleep 2
           done
+
           curl -sf http://127.0.0.1:3005/api/heartbeat
           echo ""
+          curl -sf -o /dev/null -w "login HTTP %{http_code}\n" http://127.0.0.1:3005/login
           curl -sf -o /dev/null -w "mehro.js HTTP %{http_code}\n" http://127.0.0.1:3005/mehro.js
           EOF
+          scp -i ~/.ssh/deploy_key deploy-bundle.tar.gz "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/mehro-analytics-deploy.tar.gz"
+          scp -i ~/.ssh/deploy_key deploy-remote.sh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/deploy-remote.sh"
+
+      - name: Deploy and verify on server
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "bash /tmp/deploy-remote.sh"
 
       - name: Clean up SSH key
         if: always()
